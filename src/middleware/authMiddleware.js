@@ -8,7 +8,7 @@ const authMiddleware = (req, res, next) => {
     if (!token) {
         return res.status(401).json({ 
             success: false,
-            message: 'No token, authorization denied' 
+            message: 'Không có token xác thực. Vui lòng đăng nhập' 
         });
     }
 
@@ -18,10 +18,22 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded.user;
         next();
     } catch (err) {
-        res.status(401).json({ 
-            success: false,
-            message: 'Token is not valid' 
-        });
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ 
+                success: false,
+                message: 'Token đã hết hạn. Vui lòng đăng nhập lại' 
+            });
+        } else if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ 
+                success: false,
+                message: 'Token không hợp lệ. Vui lòng đăng nhập lại' 
+            });
+        } else {
+            return res.status(401).json({ 
+                success: false,
+                message: 'Xác thực thất bại. Vui lòng đăng nhập lại' 
+            });
+        }
     }
 };
 

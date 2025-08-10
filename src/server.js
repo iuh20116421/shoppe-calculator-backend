@@ -34,8 +34,9 @@ app.use('/api/auth', authRoutes);
 app.get('/api/health', (req, res) => {
     res.json({ 
         success: true,
-        message: 'Shopee Calculator Backend API is running!',
-        timestamp: new Date().toISOString()
+        message: 'API Shopee Calculator đang hoạt động bình thường',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
     });
 });
 
@@ -44,8 +45,8 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({
         success: false,
-        message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
+        message: 'Có lỗi xảy ra! Vui lòng thử lại sau',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Lỗi hệ thống'
     });
 });
 
@@ -53,7 +54,7 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,
-        message: 'API route not found'
+        message: 'Không tìm thấy API endpoint này'
     });
 });
 

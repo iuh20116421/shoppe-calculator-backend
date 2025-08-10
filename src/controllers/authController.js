@@ -10,7 +10,10 @@ const registerUser = async (req, res) => {
         // Check if user already exists
         let user = await User.findOne({ phone });
         if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Số điện thoại này đã được đăng ký. Vui lòng sử dụng số điện thoại khác' 
+            });
         }
 
         // Create new user
@@ -45,7 +48,7 @@ const registerUser = async (req, res) => {
                 if (err) throw err;
                 res.status(201).json({ 
                     success: true,
-                    message: 'User registered successfully',
+                    message: 'Đăng ký tài khoản thành công',
                     token,
                     user: {
                         id: user.id,
@@ -58,10 +61,19 @@ const registerUser = async (req, res) => {
         );
     } catch (err) {
         console.error(err.message);
+        
+        // Handle duplicate key error (MongoDB)
+        if (err.code === 11000) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Số điện thoại này đã được đăng ký. Vui lòng sử dụng số điện thoại khác' 
+            });
+        }
+        
         res.status(500).json({ 
             success: false,
-            message: 'Server Error',
-            error: err.message 
+            message: 'Lỗi hệ thống. Vui lòng thử lại sau',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 };
@@ -76,7 +88,7 @@ const loginUser = async (req, res) => {
         if (!user) {
             return res.status(400).json({ 
                 success: false,
-                message: 'Invalid credentials' 
+                message: 'Số điện thoại không tồn tại trong hệ thống' 
             });
         }
 
@@ -85,7 +97,7 @@ const loginUser = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ 
                 success: false,
-                message: 'Invalid credentials' 
+                message: 'Mật khẩu không chính xác' 
             });
         }
 
@@ -106,7 +118,7 @@ const loginUser = async (req, res) => {
                 if (err) throw err;
                 res.json({ 
                     success: true,
-                    message: 'Login successful',
+                    message: 'Đăng nhập thành công',
                     token,
                     user: {
                         id: user.id,
@@ -121,8 +133,8 @@ const loginUser = async (req, res) => {
         console.error(err.message);
         res.status(500).json({ 
             success: false,
-            message: 'Server Error',
-            error: err.message 
+            message: 'Lỗi hệ thống. Vui lòng thử lại sau',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 };
@@ -131,16 +143,25 @@ const loginUser = async (req, res) => {
 const getUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thông tin người dùng'
+            });
+        }
+
         res.json({
             success: true,
+            message: 'Lấy thông tin người dùng thành công',
             user
         });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ 
             success: false,
-            message: 'Server Error',
-            error: err.message 
+            message: 'Lỗi hệ thống. Vui lòng thử lại sau',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 };
