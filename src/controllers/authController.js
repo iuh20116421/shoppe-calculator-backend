@@ -2,9 +2,9 @@ const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Register new user
+// Register new user (with OTP verification)
 const registerUser = async (req, res) => {
-    const { name, phone, password, shopLink } = req.body;
+    const { name, phone, password, shopLink, firebaseUid, isVerified } = req.body;
 
     try {
         // Check if user already exists
@@ -13,7 +13,7 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ 
                 success: false,
                 message: 'Số điện thoại này đã được đăng ký. Vui lòng sử dụng số điện thoại khác' 
-            });
+            }); 
         }
 
         // Create new user
@@ -88,7 +88,7 @@ const loginUser = async (req, res) => {
         if (!user) {
             return res.status(400).json({ 
                 success: false,
-                message: 'Số điện thoại không tồn tại trong hệ thống' 
+                message: 'Số điện thoại hoặc mật khẩu không chính xác' 
             });
         }
 
@@ -97,7 +97,7 @@ const loginUser = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ 
                 success: false,
-                message: 'Mật khẩu không chính xác' 
+                message: 'Số điện thoại hoặc mật khẩu không chính xác' 
             });
         }
 
@@ -166,4 +166,53 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+// Reset password
+const resetPassword = async (req, res) => {
+    const { resetToken, newPassword } = req.body;
+
+    try {
+        // Decode reset token
+        const decoded = Buffer.from(resetToken, 'base64').toString('ascii');
+        const [userId, timestamp] = decoded.split(':');
+
+        // Check if token is expired (30 minutes)
+        if (Date.now() - parseInt(timestamp) > 30 * 60 * 1000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mã xác thực đã hết hạn. Vui lòng yêu cầu mã OTP mới'
+            });
+        }
+
+        // Find user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Người dùng không tồn tại'
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password
+        await User.findByIdAndUpdate(userId, {
+            password: hashedPassword,
+            isPhoneVerified: true
+        });
+
+        res.json({
+            success: true,
+            message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới'
+        });
+    } catch (error) {
+        console.error('Reset Password Error:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi hệ thống. Vui lòng thử lại'
+        });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, resetPassword };

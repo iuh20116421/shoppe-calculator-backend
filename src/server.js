@@ -3,6 +3,7 @@ const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+const otpRoutes = require('./routes/otpRoutes');
 const { swaggerUi, specs } = require('./config/swagger');
 
 // Load environment variables
@@ -29,6 +30,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/otp', otpRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

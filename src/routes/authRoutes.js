@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, getUserProfile } = require('../controllers/authController');
+const { registerUser, loginUser, getUserProfile, resetPassword } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -107,5 +107,10 @@ router.post('/login', loginUser);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/profile', authMiddleware, getUserProfile);
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', resetPassword);
 
 module.exports = router;
